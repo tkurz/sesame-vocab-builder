@@ -95,7 +95,7 @@ public class VocabularyBuilderMojo extends AbstractMojo {
     @Parameter(property = "constantCase")
     private CaseFormat constantCase;
 
-    @Parameter(property = "stringConstantCase", defaultValue = "UPPER_UNDERSCORE")
+    @Parameter(property = "stringConstantCase") //, defaultValue = "UPPER_UNDERSCORE")
     private CaseFormat stringConstantCase;
 
     @Parameter(property = "project", required = true, readonly = true)
