@@ -381,7 +381,7 @@ public class VocabBuilder {
 
     public HashMap<String, Properties> generateResourceBundle(String baseName) throws GenerationException {
     	// be sure to have at least the default URI constant settings
-    	if ( uriGeneration == null && stringGeneration == null ) {
+    	if ( uriGeneration == null ) {
     		uriGeneration = GenerationSetting.createDefault(caseFormat, "", "");
     	}
         Pattern pattern = Pattern.compile(Pattern.quote(getPrefix()) + "(.+)");
