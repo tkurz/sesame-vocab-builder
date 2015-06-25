@@ -3,6 +3,7 @@ package com.github.tkurz.sesame.vocab.plugin;
 import java.io.File;
 import java.net.URL;
 
+import com.github.tkurz.sesame.vocab.GenerationSetting;
 import com.google.common.base.CaseFormat;
 
 /**
@@ -26,6 +27,14 @@ public class Vocabulary {
     private Boolean createResourceBundles;
     private CaseFormat caseFormat;
     private String prefix;
+    /**
+     * Allow vocabulary specific override
+     */
+    private GenerationSetting uriGeneration;
+    /**
+     * Allow vocabulary specific override
+     */
+    private GenerationSetting stringGeneration;
 
     public URL getUrl() {
         return url;
@@ -96,6 +105,10 @@ public class Vocabulary {
     }
 
     public CaseFormat getConstantCase() {
+    	// 
+    	if ( uriGeneration != null && uriGeneration.getCaseFormat() != null ) {
+    		return uriGeneration.getCaseFormat();
+    	}
         return caseFormat;
     }
 
@@ -126,4 +139,20 @@ public class Vocabulary {
     public void setCreateResourceBundles(boolean createResourceBundles) {
         this.createResourceBundles = createResourceBundles;
     }
+
+	public GenerationSetting getUriGeneration() {
+		return uriGeneration;
+	}
+
+	public void setUriGeneration(GenerationSetting uriGeneration) {
+		this.uriGeneration = uriGeneration;
+	}
+
+	public GenerationSetting getStringGeneration() {
+		return stringGeneration;
+	}
+
+	public void setStringGeneration(GenerationSetting stringGeneration) {
+		this.stringGeneration = stringGeneration;
+	}
 }
