@@ -103,12 +103,13 @@ public class Main {
             CaseFormat caseFormat = null;
             final GenerationSetting uriGenerationSetting = new GenerationSetting(); 
             if (cli.hasOption('c')) {
+            	String uriCaseFormat = cli.getOptionValue('c');
+            	uriGenerationSetting.setCaseFormat(uriCaseFormat);
                 try {
                     caseFormat = CaseFormat.valueOf(cli.getOptionValue('c'));
                     if (caseFormat == null) {
                         throw new ParseException("Did not recognise constantCase: Must be one of " + Arrays.asList(CaseFormat.values()));
                     }
-                    uriGenerationSetting.setCaseFormat(caseFormat);
                 } catch (IllegalArgumentException e) {
                     throw new ParseException("Did not recognise constantCase: Must be one of " + Arrays.asList(CaseFormat.values()));
                 }
@@ -126,19 +127,19 @@ public class Main {
             		setting.setConstantSuffix(cli.getOptionValue('S'));
             	}
                 if (cli.hasOption('C')) {
+                	setting.setCaseFormat(cli.getOptionValue('C'));
                     try {
                         final CaseFormat strCaseFormat = CaseFormat.valueOf(cli.getOptionValue('C'));
                         if (caseFormat == null) {
                             throw new ParseException("Did not recognise constantCase: Must be one of " + Arrays.asList(CaseFormat.values()));
                         }
-                        setting.setCaseFormat(strCaseFormat);
                     } catch (IllegalArgumentException e) {
                         throw new ParseException("Did not recognise constantCase: Must be one of " + Arrays.asList(CaseFormat.values()));
                     }
                 }
                 else {
                 	// uri case format applies as DEFAULT
-                	setting.setCaseFormat(caseFormat);
+                	setting.setCaseFormat("NONE");
                 }
                 // specify string generation
             	builder.setStringGeneration(setting);

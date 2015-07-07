@@ -52,6 +52,8 @@ import java.util.*;
         requiresDependencyResolution = ResolutionScope.COMPILE,
         requiresProject = true)
 public class VocabularyBuilderMojo extends AbstractMojo {
+
+	
     @Parameter(property = "output", defaultValue = "${project.build.directory}/generated-sources/sesame-vocabs")
     private File outputDirectory;
 
@@ -105,10 +107,15 @@ public class VocabularyBuilderMojo extends AbstractMojo {
      * Specify whether to generate the URI constant section, 
      * defaults to <code>true</code>
      */
+    @Deprecated // when removing the @Parameter - change this to a static final Boolean 
     @Parameter(property = "createUriConstants", defaultValue = "true")
     private boolean createUriConstants;
+
+    @Deprecated // when removing the @Parameter - change this to a static final String 
     @Parameter(property = "stringConstantPrefix", defaultValue = "")
     private String uriConstantPrefix;
+
+    @Deprecated // when removing the @Parameter - change this to a static final String 
     @Parameter(property = "stringConstantSuffix", defaultValue = "")
     private String uriConstantSuffix;
 
@@ -116,17 +123,27 @@ public class VocabularyBuilderMojo extends AbstractMojo {
      * Specify whether to generate the String constant section , 
      * defaults to <code>true</code>
      */
+   
+    @Deprecated // when removing the @Parameter - change this to a static final Boolean 
     @Parameter(property = "createStringConstants", defaultValue = "true")
     private boolean createStringConstants;
+
+    @Deprecated // when removing the @Parameter - change this to a static final String 
     @Parameter(property = "stringConstantPrefix", defaultValue = "")
     private String stringConstantPrefix;
+
+    @Deprecated // when removing the @Parameter - change this to a static final String 
     @Parameter(property = "stringConstantSuffix", defaultValue = "_STRING")
     private String stringConstantSuffix;
     /**
      * Specify the case adjustment (if any) for all generated sections 
      * (URI constants, Strings) and resource bundle
      */
-    @Parameter(property = "constantCase")
+    @Parameter(property = "constantCase", defaultValue="NONE")
+    private String constantCaseStr;
+    /**
+     * the constant case for adjusting the case format (if not "NONE")
+     */
     private CaseFormat constantCase;
     
     // not used - left because of existing pom.xml
@@ -170,10 +187,12 @@ public class VocabularyBuilderMojo extends AbstractMojo {
             final Log log = getLog();
             log.info(String.format("Generating %d vocabularies", vocabularies.size()));
 
-
+            // String is either NONE (=default) or the constants from CaseFormat
+            // if not valid, no formatting applies
+            constantCase = caseFormatFromString(constantCaseStr);
             // be sure to generate at least the uri's if no configuration is present
             if ( createUriConstants && uriGeneration == null  ) {
-            	// when no setting for uri generation present - create new default setting 
+            	// when no setting for uri generation present - create new default setting based
             	uriGeneration = GenerationSetting.createDefault(constantCase, uriConstantPrefix, uriConstantSuffix);
             }
             if ( createStringConstants && stringGeneration == null ) {
@@ -393,6 +412,19 @@ public class VocabularyBuilderMojo extends AbstractMojo {
         } catch (IOException e) {
             throw new MojoExecutionException("Could not write Vocabularies", e);
         }
+    }
+    /**
+     * Helper method for initializing based on the provided caseFormat string 
+     * @param caseFormat
+     * @return
+     */
+    private CaseFormat caseFormatFromString(String caseFormat) {
+    	try {
+    		return CaseFormat.valueOf(caseFormat);
+    	} catch (Exception e) {
+    		// null will be treated as NONE
+    		return null;
+    	}
     }
 
     private File fetchVocab(URL url, final String displayName, final Vocabulary vocab) throws URISyntaxException, IOException {
