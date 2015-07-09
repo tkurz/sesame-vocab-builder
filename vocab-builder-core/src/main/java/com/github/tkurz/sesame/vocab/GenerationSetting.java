@@ -4,19 +4,13 @@ import com.google.common.base.CaseFormat;
 
 public class GenerationSetting {
 
-	private String caseFormat;
+	private CaseFormat caseFormat;
 	private String constantPrefix;
 	private String constantSuffix;
 	public CaseFormat getCaseFormat() {
-		try {
-			if ( caseFormat != null ) {
-				return CaseFormat.valueOf(caseFormat);
-			}
-		} catch (Exception e) {
-		}
-		return null;
+		return caseFormat;
 	}
-	public void setCaseFormat(String caseFormat) {
+	public void setCaseFormat(CaseFormat caseFormat) {
 		this.caseFormat = caseFormat;
 	}
 	public String getConstantPrefix() {
@@ -33,13 +27,12 @@ public class GenerationSetting {
 	}
 	public static GenerationSetting createDefault(CaseFormat format, String prefix, String suffix) {
 		GenerationSetting setting = new GenerationSetting();
-		setting.caseFormat = (format != null ? format.name() : null);
+		setting.caseFormat = format;
 		setting.constantPrefix = prefix;
 		setting.constantSuffix = suffix;
 		return setting;
 		
 	}
-	
 	public GenerationSetting mergeWith(GenerationSetting other) {
 		if ( other == null) {
 			other = new GenerationSetting();
