@@ -143,38 +143,6 @@ public class Main {
                 // specify string generation
             	builder.setStringGeneration(setting);
             }
-//            if (cli.hasOption('S')) {
-//                builder.setStringPropertySuffix(cli.getOptionValue('S'));
-//            } else {
-//                builder.setStringPropertySuffix(null);
-//            }
-//            if (cli.hasOption('P')) {
-//                builder.setStringPropertyPrefix(cli.getOptionValue('P'));
-//            } else {
-//                builder.setStringPropertyPrefix(null);
-//            }
-//            if (cli.hasOption('c')) {
-//                try {
-//                    final CaseFormat caseFormat = CaseFormat.valueOf(cli.getOptionValue('c'));
-//                    if (caseFormat == null) {
-//                        throw new ParseException("Did not recognise constantCase: Must be one of " + Arrays.asList(CaseFormat.values()));
-//                    }
-//                    builder.setConstantCase(caseFormat);
-//                } catch (IllegalArgumentException e) {
-//                    throw new ParseException("Did not recognise constantCase: Must be one of " + Arrays.asList(CaseFormat.values()));
-//                }
-//            }
-//            if (cli.hasOption('C')) {
-//                try {
-//                    final CaseFormat caseFormat = CaseFormat.valueOf(cli.getOptionValue('C'));
-//                    if (caseFormat == null) {
-//                        throw new ParseException("Did not recognise constantCase: Must be one of " + Arrays.asList(CaseFormat.values()));
-//                    }
-//                    builder.setStringConstantCase(caseFormat);
-//                } catch (IllegalArgumentException e) {
-//                    throw new ParseException("Did not recognise constantCase: Must be one of " + Arrays.asList(CaseFormat.values()));
-//                }
-//            }
             if (cli.hasOption('s')) {
                 try {
                     builder.setIndent(StringUtils.repeat(' ', Integer.parseInt(cli.getOptionValue('s', "4"))));

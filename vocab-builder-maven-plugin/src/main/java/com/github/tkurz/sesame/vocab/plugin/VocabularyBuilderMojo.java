@@ -294,6 +294,9 @@ public class VocabularyBuilderMojo extends AbstractMojo {
                         target = target.resolve(builder.getPackageName().replaceAll("\\.", "/"));
                         Files.createDirectories(target);
                     }
+                    /*
+                     * createUriConstants, createStringConstants may be set to false by the user 
+                     */
                     if ( createUriConstants && uriGeneration != null ) {
                     	/*
                     	 * when uri constant generation, use default generation settings and override
