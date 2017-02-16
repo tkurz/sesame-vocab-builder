@@ -100,37 +100,48 @@ public class Main {
             if (cli.hasOption('l')) {
                 builder.setPreferredLanguage(cli.getOptionValue('l'));
             }
-            if (cli.hasOption('S')) {
-                builder.setStringPropertySuffix(cli.getOptionValue('S'));
-            } else {
-                builder.setStringPropertySuffix(null);
-            }
-            if (cli.hasOption('P')) {
-                builder.setStringPropertyPrefix(cli.getOptionValue('P'));
-            } else {
-                builder.setStringPropertyPrefix(null);
-            }
+            CaseFormat caseFormat = null;
+            final GenerationSetting uriGenerationSetting = new GenerationSetting(); 
             if (cli.hasOption('c')) {
                 try {
-                    final CaseFormat caseFormat = CaseFormat.valueOf(cli.getOptionValue('c'));
+                    caseFormat = CaseFormat.valueOf(cli.getOptionValue('c'));
                     if (caseFormat == null) {
                         throw new ParseException("Did not recognise constantCase: Must be one of " + Arrays.asList(CaseFormat.values()));
                     }
-                    builder.setConstantCase(caseFormat);
+                    uriGenerationSetting.setCaseFormat(caseFormat);
                 } catch (IllegalArgumentException e) {
                     throw new ParseException("Did not recognise constantCase: Must be one of " + Arrays.asList(CaseFormat.values()));
                 }
             }
-            if (cli.hasOption('C')) {
-                try {
-                    final CaseFormat caseFormat = CaseFormat.valueOf(cli.getOptionValue('C'));
-                    if (caseFormat == null) {
+            // in any case, do URI generation from the command line
+            builder.setUriGeneration(uriGenerationSetting);
+            
+            // options for string generation - when NO option present--> no string generation
+            if ( cli.hasOption('S') || cli.hasOption('P') || cli.hasOption('C')) {
+            	GenerationSetting setting = new GenerationSetting();
+            	if ( cli.hasOption('P')) {
+            		setting.setConstantPrefix(cli.getOptionValue('P'));
+            	}
+            	if ( cli.hasOption('S')) {
+            		setting.setConstantSuffix(cli.getOptionValue('S'));
+            	}
+                if (cli.hasOption('C')) {
+                    try {
+                        final CaseFormat strCaseFormat = CaseFormat.valueOf(cli.getOptionValue('C'));
+                        if (caseFormat == null) {
+                            throw new ParseException("Did not recognise constantCase: Must be one of " + Arrays.asList(CaseFormat.values()));
+                        }
+                        setting.setCaseFormat(strCaseFormat);
+                    } catch (IllegalArgumentException e) {
                         throw new ParseException("Did not recognise constantCase: Must be one of " + Arrays.asList(CaseFormat.values()));
                     }
-                    builder.setStringConstantCase(caseFormat);
-                } catch (IllegalArgumentException e) {
-                    throw new ParseException("Did not recognise constantCase: Must be one of " + Arrays.asList(CaseFormat.values()));
                 }
+                else {
+                	// uri case format applies as DEFAULT
+                	setting.setCaseFormat(caseFormat);
+                }
+                // specify string generation
+            	builder.setStringGeneration(setting);
             }
             if (cli.hasOption('s')) {
                 try {
@@ -206,7 +217,7 @@ public class Main {
         w.close();
     }
 
-    @SuppressWarnings({"AccessStaticViaInstance", "static-access"})
+    @SuppressWarnings({"static-access"})
     private static Options getCliOpts() {
         Options o = new Options();
 

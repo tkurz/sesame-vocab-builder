@@ -1,6 +1,7 @@
 package com.github.tkurz.sesame.vocab.plugin;
 
 import com.github.tkurz.sesame.vocab.GenerationException;
+import com.github.tkurz.sesame.vocab.GenerationSetting;
 import com.github.tkurz.sesame.vocab.VocabBuilder;
 import com.google.common.base.CaseFormat;
 
@@ -51,7 +52,6 @@ import java.util.*;
         requiresDependencyResolution = ResolutionScope.COMPILE,
         requiresProject = true)
 public class VocabularyBuilderMojo extends AbstractMojo {
-
     @Parameter(property = "output", defaultValue = "${project.build.directory}/generated-sources/sesame-vocabs")
     private File outputDirectory;
 
@@ -60,10 +60,24 @@ public class VocabularyBuilderMojo extends AbstractMojo {
 
     @Parameter(property = "remoteCacheDir", defaultValue = "${project.build.directory}/vocab-builder-maven-plugin.cache")
     private File remoteCacheDir;
-
+    /**
+     * Prefix & Suffix settings for URI constant generation
+     * if not present, the default values apply
+     */
+    @Parameter(property = "uriGeneration")
+    private GenerationSetting uriGeneration;
+    /**
+     * Prefix & Suffix settings for String constant generation
+     * if not present, the default values apply
+     */
+    @Parameter(property = "stringGeneration")
+    private GenerationSetting stringGeneration;
+    /**
+     * The list of vocabularies to process
+     */
     @Parameter
     private List<Vocabulary> vocabularies;
-
+    
     @Parameter(property = "url")
     private URL url;
     @Parameter(property = "file")
@@ -81,21 +95,42 @@ public class VocabularyBuilderMojo extends AbstractMojo {
 
     @Parameter(property = "preferredLanguage")
     private String preferredLanguage;
-
+    /**
+     * Specify whether to generate a resource bundle, 
+     * defaults to <code>false</code>
+     */
     @Parameter(property = "createResourceBundles", defaultValue = "false")
     private boolean createResourceBundles;
+    /**
+     * Specify whether to generate the URI constant section, 
+     * defaults to <code>true</code>
+     */
+    @Parameter(property = "createUriConstants", defaultValue = "true")
+    private boolean createUriConstants;
+    @Parameter(property = "stringConstantPrefix", defaultValue = "")
+    private String uriConstantPrefix;
+    @Parameter(property = "stringConstantSuffix", defaultValue = "")
+    private String uriConstantSuffix;
 
+    /**
+     * Specify whether to generate the String constant section , 
+     * defaults to <code>true</code>
+     */
     @Parameter(property = "createStringConstants", defaultValue = "true")
     private boolean createStringConstants;
     @Parameter(property = "stringConstantPrefix", defaultValue = "")
     private String stringConstantPrefix;
     @Parameter(property = "stringConstantSuffix", defaultValue = "_STRING")
     private String stringConstantSuffix;
-
+    /**
+     * Specify the case adjustment (if any) for all generated sections 
+     * (URI constants, Strings) and resource bundle
+     */
     @Parameter(property = "constantCase")
     private CaseFormat constantCase;
-
-    @Parameter(property = "stringConstantCase", defaultValue = "UPPER_UNDERSCORE")
+    
+    // not used - left because of existing pom.xml
+    @Parameter(property = "stringConstantCase") //, defaultValue = "UPPER_UNDERSCORE")
     private CaseFormat stringConstantCase;
 
     @Parameter(property = "project", required = true, readonly = true)
@@ -135,6 +170,20 @@ public class VocabularyBuilderMojo extends AbstractMojo {
             final Log log = getLog();
             log.info(String.format("Generating %d vocabularies", vocabularies.size()));
 
+
+            // be sure to generate at least the uri's if no configuration is present
+            if ( createUriConstants && uriGeneration == null  ) {
+            	// when no setting for uri generation present - create new default setting 
+            	uriGeneration = GenerationSetting.createDefault(constantCase, uriConstantPrefix, uriConstantSuffix);
+            }
+            if ( createStringConstants && stringGeneration == null ) {
+            	// when no setting for string generation present - create new default setting 
+            	stringGeneration = GenerationSetting.createDefault(constantCase, stringConstantPrefix, stringConstantSuffix);
+            }
+            if ( stringGeneration == null && uriGeneration == null ) {
+            	// be sure to generate at least the URI's
+            	uriGeneration = GenerationSetting.createDefault(constantCase, uriConstantPrefix, uriConstantSuffix);
+            }
             for (Vocabulary vocab : vocabularies) {
                 final String displayName = vocab.getName() != null ? vocab.getName() : vocab.getClassName();
                 if (displayName == null) {
@@ -245,18 +294,37 @@ public class VocabularyBuilderMojo extends AbstractMojo {
                         target = target.resolve(builder.getPackageName().replaceAll("\\.", "/"));
                         Files.createDirectories(target);
                     }
+                    /*
+                     * createUriConstants, createStringConstants may be set to false by the user 
+                     */
+                    if (createUriConstants && uriGeneration != null) {
+                    	/*
+                    	 * when uri constant generation, use default generation settings and override
+                    	 * with vocabulary specific settings (if present)
+                    	 */
+                    	builder.setUriGeneration(uriGeneration.mergeWith(vocab.getUriGeneration()));
+                    }
+                    else if (vocab.getUriGeneration() != null) {
+                    	/*
+                    	 * when uri constant generation deactivated, vocabulary specific settings
+                    	 * may apply 
+                    	 */
+                    	builder.setUriGeneration(vocab.getUriGeneration());
+                    }
                     // when string constant generation set, specify prefix and suffix
-                    if (createStringConstants) {
-                        // when prefix set, the builder will generate string constants in addition to the URI's
-                        // when no string constant prefix set, use a single underscore by default
-                        builder.setStringPropertyPrefix(stringConstantPrefix);
-                        builder.setStringPropertySuffix(stringConstantSuffix);
-                        builder.setStringConstantCase(stringConstantCase);
-                    } else {
-                        // be sure to not generate String constants
-                        builder.setStringPropertyPrefix(null);
-                        builder.setStringPropertySuffix(null);
-                        builder.setStringConstantCase(null);
+                    if (createStringConstants && stringGeneration != null) {
+                    	/*
+                    	 * when string constant generation, use default generation settings and override
+                    	 * with vocabulary specific settings (if present)
+                    	 */
+                    	builder.setStringGeneration(stringGeneration.mergeWith(vocab.getStringGeneration()));
+                    }
+                    else if (vocab.getStringGeneration() != null ) { 
+                    	/*
+                    	 * when string constant generation deactivated, vocabulary specific settings
+                    	 * may apply 
+                    	 */
+                    	builder.setStringGeneration(vocab.getStringGeneration());
                     }
                     final Path vFile = target.resolve(fName);
                     final String className = vFile.getFileName().toString().replaceFirst("\\.java$", "");

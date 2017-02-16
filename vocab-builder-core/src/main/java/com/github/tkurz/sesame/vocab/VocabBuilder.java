@@ -51,11 +51,13 @@ public class VocabBuilder {
     private String language = null;
     private final Model model;
     private CaseFormat caseFormat = null;
-    private CaseFormat stringCaseFormat = null;
-    private String stringPropertyPrefix, stringPropertySuffix;
+//    private CaseFormat stringCaseFormat = null;
+//    private String stringPropertyPrefix, stringPropertySuffix;
     private Set<String> createdFields = new HashSet<>();
     private static Set<String> reservedWords = Sets.newHashSet("abstract","assert","boolean","break","byte","case","catch","char","class","const","default","do","double","else","enum","extends","false","final","finally","float","for","goto","if","implements","import","instanceof","int","interface","long","native","new","null","package","private","protected","public","return","short","static","strictfp","super","switch","synchronized","this","throw","throws","transient","true","try","void","volatile","while","continue","PREFIX","NAMESPACE");
 
+    private GenerationSetting stringGeneration;
+    private GenerationSetting uriGeneration;
     /**
      * Create a new VocabularyBuilder, reading the vocab definition from the provided file
      *
@@ -111,6 +113,11 @@ public class VocabBuilder {
      *
      */
     public void generate(String className, PrintWriter out) throws IOException, GraphUtilException, GenerationException {
+    	// be sure to have at least the uri constants generated
+    	if ( stringGeneration == null && uriGeneration == null ) {
+    		uriGeneration = GenerationSetting.createDefault(caseFormat, "", "");
+            //throw new GenerationException("no generation settings present, please set explicitly");
+    	}
         log.trace("classname: {}", className);
         if (StringUtils.isBlank(name)) {
             name = className;
@@ -190,73 +197,87 @@ public class VocabBuilder {
         List<String> keys = new ArrayList<>();
         keys.addAll(splitUris.keySet());
         Collections.sort(keys, String.CASE_INSENSITIVE_ORDER);
+        // do the string constant generation (if set)
+		if (stringGeneration != null) {
+			for (String key : keys) {
+				final Literal comment = getFirstExistingObjectLiteral(model, splitUris.get(key), getPreferredLanguage(),
+						COMMENT_PROPERTIES);
+				final Literal label = getFirstExistingObjectLiteral(model, splitUris.get(key), getPreferredLanguage(),
+						LABEL_PROPERTIES);
 
-        //string constant values
-        if (stringCaseFormat != null || StringUtils.isNotBlank(stringPropertyPrefix) || (StringUtils.isNotBlank(stringPropertySuffix))) {
-            // add the possibility to add a string property with the namespace for usage in
-            for (String key : keys) {
-                final Literal comment = getFirstExistingObjectLiteral(model, splitUris.get(key), getPreferredLanguage(), COMMENT_PROPERTIES);
-                final Literal label = getFirstExistingObjectLiteral(model, splitUris.get(key), getPreferredLanguage(), LABEL_PROPERTIES);
+				out.println(getIndent(1) + "/**");
+				if (label != null) {
+					out.printf(getIndent(1) + " * %s%n", label.getLabel());
+					out.println(getIndent(1) + " * <p>");
+				}
+				out.printf(getIndent(1) + " * {@code %s}.%n", splitUris.get(key).stringValue());
+				if (comment != null) {
+					out.println(getIndent(1) + " * <p>");
+					out.printf(getIndent(1) + " * %s%n", WordUtils.wrap(comment.getLabel().replaceAll("\\s+", " "), 70,
+							"\n" + getIndent(1) + " * ", false));
+				}
+				out.println(getIndent(1) + " *");
+				out.printf(getIndent(1) + " * @see <a href=\"%s\">%s</a>%n", splitUris.get(key), key);
+				out.println(getIndent(1) + " */");
 
-                out.println(getIndent(1) + "/**");
-                if (label != null) {
-                    out.printf(getIndent(1) + " * %s%n", label.getLabel());
-                    out.println(getIndent(1) + " * <p>");
-                }
-                out.printf(getIndent(1) + " * {@code %s}.%n", splitUris.get(key).stringValue());
-                if (comment != null) {
-                    out.println(getIndent(1) + " * <p>");
-                    out.printf(getIndent(1) + " * %s%n", WordUtils.wrap(comment.getLabel().replaceAll("\\s+", " "), 70, "\n" + getIndent(1) + " * ", false));
-                }
-                out.println(getIndent(1) + " *");
-                out.printf(getIndent(1) + " * @see <a href=\"%s\">%s</a>%n", splitUris.get(key), key);
-                out.println(getIndent(1) + " */");
+				final String nextKey = cleanKey(
+						// NOTE: CONSTANT PREFIX and constant SUFFIX are NOT part of caseFormatting
+						String.format("%s%s%s", StringUtils.defaultString(stringGeneration.getConstantPrefix()),
+								doCaseFormatting(key, stringGeneration.getCaseFormat()),
+								StringUtils.defaultString(stringGeneration.getConstantSuffix())));
+				checkField(className, nextKey);
+				out.printf(getIndent(1) + "public static final String %s = %s.NAMESPACE + \"%s\";%n", nextKey,
+						className, key);
+				out.println();
+			}
 
-                final String nextKey = cleanKey(String.format("%s%s%s", StringUtils.defaultString(getStringPropertyPrefix()),
-                        doCaseFormatting(key, getStringConstantCase()),
-                        StringUtils.defaultString(getStringPropertySuffix())));
-                checkField(className, nextKey);
-                out.printf(getIndent(1) + "public static final String %s = %s.NAMESPACE + \"%s\";%n",
-                         nextKey, className, key);
-                out.println();
-            }
         }
+		// do the entire uri constant generation
+		if ( uriGeneration != null ) {
+	        for (String key : keys) {
+	            Literal comment = getFirstExistingObjectLiteral(model, splitUris.get(key), getPreferredLanguage(), COMMENT_PROPERTIES);
+	            Literal label = getFirstExistingObjectLiteral(model, splitUris.get(key), getPreferredLanguage(), LABEL_PROPERTIES);
 
-        //and now the resources
-        for (String key : keys) {
-            Literal comment = getFirstExistingObjectLiteral(model, splitUris.get(key), getPreferredLanguage(), COMMENT_PROPERTIES);
-            Literal label = getFirstExistingObjectLiteral(model, splitUris.get(key), getPreferredLanguage(), LABEL_PROPERTIES);
+	            out.println(getIndent(1) + "/**");
+	            if (label != null) {
+	                out.printf(getIndent(1) + " * %s%n", label.getLabel());
+	                out.println(getIndent(1) + " * <p>");
+	            }
+	            out.printf(getIndent(1) + " * {@code %s}.%n", splitUris.get(key).stringValue());
+	            if (comment != null) {
+	                out.println(getIndent(1) + " * <p>");
+	                out.printf(getIndent(1) + " * %s%n", WordUtils.wrap(comment.getLabel().replaceAll("\\s+", " "), 70, "\n" + getIndent(1) + " * ", false));
+	            }
+	            out.println(getIndent(1) + " *");
+	            out.printf(getIndent(1) + " * @see <a href=\"%s\">%s</a>%n", splitUris.get(key), key);
+	            out.println(getIndent(1) + " */");
+				final String nextKey = cleanKey(
+						// NOTE: CONSTANT PREFIX and constant SUFFIX are NOT part of caseFormatting
+						String.format("%s%s%s", StringUtils.defaultString(uriGeneration.getConstantPrefix()),
+								doCaseFormatting(key, uriGeneration.getCaseFormat()),
+								StringUtils.defaultString(uriGeneration.getConstantSuffix())));
 
-            out.println(getIndent(1) + "/**");
-            if (label != null) {
-                out.printf(getIndent(1) + " * %s%n", label.getLabel());
-                out.println(getIndent(1) + " * <p>");
-            }
-            out.printf(getIndent(1) + " * {@code %s}.%n", splitUris.get(key).stringValue());
-            if (comment != null) {
-                out.println(getIndent(1) + " * <p>");
-                out.printf(getIndent(1) + " * %s%n", WordUtils.wrap(comment.getLabel().replaceAll("\\s+", " "), 70, "\n" + getIndent(1) + " * ", false));
-            }
-            out.println(getIndent(1) + " *");
-            out.printf(getIndent(1) + " * @see <a href=\"%s\">%s</a>%n", splitUris.get(key), key);
-            out.println(getIndent(1) + " */");
+	            //String nextKey = cleanKey(doCaseFormatting(key, uriGeneration.getCaseFormat()));
+	            checkField(className, nextKey);
+	            out.printf(getIndent(1) + "public static final URI %s;%n", nextKey);
+	            out.println();
+	        }
+	        //static init
+	        out.println(getIndent(1) + "static {");
+	        out.printf(getIndent(2) + "ValueFactory factory = ValueFactoryImpl.getInstance();%n");
+	        out.println();
+	        for (String key : keys) {
+				final String nextKey = cleanKey(
+						// NOTE: CONSTANT PREFIX and constant SUFFIX are NOT part of caseFormatting
+						String.format("%s%s%s", StringUtils.defaultString(uriGeneration.getConstantPrefix()),
+								doCaseFormatting(key, uriGeneration.getCaseFormat()),
+								StringUtils.defaultString(uriGeneration.getConstantSuffix())));
+	            out.printf(getIndent(2) + "%s = factory.createURI(%s.NAMESPACE, \"%s\");%n", nextKey, className, key);
+	        }
+	        out.println(getIndent(1) + "}");
+	        out.println();
 
-            String nextKey = cleanKey(doCaseFormatting(key, getConstantCase()));
-            checkField(className, nextKey);
-            out.printf(getIndent(1) + "public static final URI %s;%n", nextKey);
-            out.println();
-        }
-
-        //static init
-        out.println(getIndent(1) + "static {");
-        out.printf(getIndent(2) + "ValueFactory factory = ValueFactoryImpl.getInstance();%n");
-        out.println();
-        for (String key : keys) {
-            String nextKey = cleanKey(doCaseFormatting(key, getConstantCase()));
-            out.printf(getIndent(2) + "%s = factory.createURI(%s.NAMESPACE, \"%s\");%n", nextKey, className, key);
-        }
-        out.println(getIndent(1) + "}");
-        out.println();
+		}
 
         //private contructor to avoid instances
         out.printf(getIndent(1) + "private %s() {%n", className);
@@ -296,6 +317,10 @@ public class VocabBuilder {
     }
 
     public HashMap<String, Properties> generateResourceBundle(String baseName) throws GenerationException {
+    	// be sure to have at least the default URI constant settings
+    	if ( uriGeneration == null ) {
+    		uriGeneration = GenerationSetting.createDefault(caseFormat, "", "");
+    	}
         Pattern pattern = Pattern.compile(Pattern.quote(getPrefix()) + "(.+)");
         HashMap<String, URI> splitUris = new HashMap<>();
         for (Resource nextSubject : model.subjects()) {
@@ -317,7 +342,8 @@ public class VocabBuilder {
         bundles.put(baseName, new Properties());
         for (String key : keys) {
             final URI resource = splitUris.get(key);
-            String nextKey = cleanKey(doCaseFormatting(key, getConstantCase()));
+            // 
+            String nextKey = cleanKey(doCaseFormatting(key, uriGeneration.getCaseFormat()));
 
             for (URI p : LABEL_PROPERTIES) {
                 for (Value v : GraphUtil.getObjects(model, resource, p)) {
@@ -485,34 +511,51 @@ public class VocabBuilder {
     }
 
     public void setConstantCase(CaseFormat caseFormat) {
-        this.caseFormat = caseFormat;
+    	this.caseFormat = caseFormat;
     }
 
     public CaseFormat getConstantCase() {
         return caseFormat;
     }
+//
+//    public CaseFormat getStringConstantCase() {
+//        return stringCaseFormat;
+//    }
+//
+//    public void setStringConstantCase(CaseFormat stringCaseFormat) {
+//        this.stringCaseFormat = stringCaseFormat;
+//    }
+//
+//    public String getStringPropertyPrefix() {
+//        return stringPropertyPrefix;
+//    }
+//
+//    public void setStringPropertyPrefix(String stringPropertyPrefix) {
+//    	
+//        this.stringPropertyPrefix = stringPropertyPrefix;
+//    }
+//
+//    public String getStringPropertySuffix() {
+//		return stringPropertySuffix;
+//	}
+//
+//	public void setStringPropertySuffix(String stringPropertySuffix) {
+//		this.stringPropertySuffix = stringPropertySuffix;
+//	}
 
-    public CaseFormat getStringConstantCase() {
-        return stringCaseFormat;
-    }
-
-    public void setStringConstantCase(CaseFormat stringCaseFormat) {
-        this.stringCaseFormat = stringCaseFormat;
-    }
-
-    public String getStringPropertyPrefix() {
-        return stringPropertyPrefix;
-    }
-
-    public void setStringPropertyPrefix(String stringPropertyPrefix) {
-        this.stringPropertyPrefix = stringPropertyPrefix;
-    }
-
-    public String getStringPropertySuffix() {
-		return stringPropertySuffix;
+	public GenerationSetting getStringGeneration() {
+		return stringGeneration;
 	}
 
-	public void setStringPropertySuffix(String stringPropertySuffix) {
-		this.stringPropertySuffix = stringPropertySuffix;
+	public void setStringGeneration(GenerationSetting stringGeneration) {
+		this.stringGeneration = stringGeneration;
+	}
+
+	public GenerationSetting getUriGeneration() {
+		return uriGeneration;
+	}
+
+	public void setUriGeneration(GenerationSetting uriGeneration) {
+		this.uriGeneration = uriGeneration;
 	}
 }
