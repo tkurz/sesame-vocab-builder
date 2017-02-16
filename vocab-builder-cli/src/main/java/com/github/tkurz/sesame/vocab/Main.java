@@ -217,7 +217,7 @@ public class Main {
         w.close();
     }
 
-    @SuppressWarnings({"AccessStaticViaInstance", "static-access"})
+    @SuppressWarnings({"static-access"})
     private static Options getCliOpts() {
         Options o = new Options();
 

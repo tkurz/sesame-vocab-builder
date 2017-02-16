@@ -297,14 +297,14 @@ public class VocabularyBuilderMojo extends AbstractMojo {
                     /*
                      * createUriConstants, createStringConstants may be set to false by the user 
                      */
-                    if ( createUriConstants && uriGeneration != null ) {
+                    if (createUriConstants && uriGeneration != null) {
                     	/*
                     	 * when uri constant generation, use default generation settings and override
                     	 * with vocabulary specific settings (if present)
                     	 */
                     	builder.setUriGeneration(uriGeneration.mergeWith(vocab.getUriGeneration()));
                     }
-                    else if ( vocab.getUriGeneration() != null ) {
+                    else if (vocab.getUriGeneration() != null) {
                     	/*
                     	 * when uri constant generation deactivated, vocabulary specific settings
                     	 * may apply 
@@ -312,7 +312,7 @@ public class VocabularyBuilderMojo extends AbstractMojo {
                     	builder.setUriGeneration(vocab.getUriGeneration());
                     }
                     // when string constant generation set, specify prefix and suffix
-                    if ( createStringConstants && stringGeneration != null ) {
+                    if (createStringConstants && stringGeneration != null) {
                     	/*
                     	 * when string constant generation, use default generation settings and override
                     	 * with vocabulary specific settings (if present)
@@ -326,21 +326,6 @@ public class VocabularyBuilderMojo extends AbstractMojo {
                     	 */
                     	builder.setStringGeneration(vocab.getStringGeneration());
                     }
-//                    if ( uriGeneration != null ) {
-//                    	builder.setUriGeneration(uriGeneration);
-//                    }
-//                    if (createStringConstants) {
-//                        // when prefix set, the builder will generate string constants in addition to the URI's
-//                        // when no string constant prefix set, use a single underscore by default
-//                        builder.setStringPropertyPrefix(stringConstantPrefix);
-//                        builder.setStringPropertySuffix(stringConstantSuffix);
-//                        builder.setStringConstantCase(stringConstantCase);
-//                    } else {
-//                        // be sure to not generate String constants
-//                        builder.setStringPropertyPrefix(null);
-//                        builder.setStringPropertySuffix(null);
-//                        builder.setStringConstantCase(null);
-//                    }
                     final Path vFile = target.resolve(fName);
                     final String className = vFile.getFileName().toString().replaceFirst("\\.java$", "");
                     try (final PrintWriter out = new PrintWriter(
