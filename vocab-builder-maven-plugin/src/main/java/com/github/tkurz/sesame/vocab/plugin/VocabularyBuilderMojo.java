@@ -24,11 +24,10 @@ import org.apache.maven.plugin.descriptor.PluginDescriptor;
 import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.plugins.annotations.*;
 import org.apache.maven.project.MavenProject;
-import org.openrdf.model.util.GraphUtilException;
-import org.openrdf.rio.RDFFormat;
-import org.openrdf.rio.RDFParseException;
-import org.openrdf.rio.RDFParserRegistry;
-import org.openrdf.rio.Rio;
+import org.eclipse.rdf4j.rio.RDFFormat;
+import org.eclipse.rdf4j.rio.RDFParseException;
+import org.eclipse.rdf4j.rio.RDFParserRegistry;
+import org.eclipse.rdf4j.rio.Rio;
 import org.slf4j.impl.StaticLoggerBinder;
 import org.sonatype.plexus.build.incremental.BuildContext;
 
@@ -151,12 +150,12 @@ public class VocabularyBuilderMojo extends AbstractMojo {
 
                     if (mime == null) {
                         if (vocab.getUrl() != null) {
-                            RDFFormat guess = Rio.getParserFormatForFileName(vocab.getUrl().toString());
+                            RDFFormat guess = Rio.getParserFormatForFileName(vocab.getUrl().toString()).orElse(null);
                             if (guess != null) {
                                 mime = guess.getDefaultMIMEType();
                             }
                         } else if (vocab.getFile() != null) {
-                            RDFFormat guess = Rio.getParserFormatForFileName(vocab.getFile().toString());
+                            RDFFormat guess = Rio.getParserFormatForFileName(vocab.getFile().toString()).orElse(null);
                             if (guess != null) {
                                 mime = guess.getDefaultMIMEType();
                             }
@@ -297,8 +296,6 @@ public class VocabularyBuilderMojo extends AbstractMojo {
 
                 } catch (RDFParseException e) {
                     throw new MojoFailureException(String.format("Could not parse vocabulary %s: %s", displayName, e.getMessage()));
-                } catch (GraphUtilException e) {
-                    throw new MojoExecutionException("Internal Mojo Error", e);
                 } catch (GenerationException e) {
                     throw new MojoFailureException(String.format("Could not generate vocabulary %s: %s", displayName, e.getMessage()));
                 } catch (URISyntaxException e) {
@@ -346,7 +343,7 @@ public class VocabularyBuilderMojo extends AbstractMojo {
                         log.debug("Using mime-type from response-header: " + mime);
                     }
 
-                    final RDFFormat format = Rio.getParserFormatForMIMEType(mime);
+                    final RDFFormat format = Rio.getParserFormatForMIMEType(mime).orElse(null);
                     final String fName;
                     if (format == null) {
                         fName = displayName + ".cache";

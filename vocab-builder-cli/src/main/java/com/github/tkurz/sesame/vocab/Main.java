@@ -10,8 +10,11 @@ import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.methods.RequestBuilder;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
-import org.openrdf.model.util.GraphUtilException;
-import org.openrdf.rio.*;
+import org.eclipse.rdf4j.rio.RDFFormat;
+import org.eclipse.rdf4j.rio.RDFParseException;
+import org.eclipse.rdf4j.rio.RDFParserRegistry;
+import org.eclipse.rdf4j.rio.Rio;
+import org.eclipse.rdf4j.rio.UnsupportedRDFormatException;
 
 import com.google.common.base.CaseFormat;
 
@@ -67,14 +70,15 @@ public class Main {
                     throw new ParseException("too many arguments");
             }
 
-            RDFFormat format = Rio.getParserFormatForMIMEType(cli.getOptionValue('f', null));
+            RDFFormat format = Rio.getParserFormatForMIMEType(cli.getOptionValue('f', null)).orElse(null);
 
             final VocabBuilder builder;
             if (input.startsWith("http://")) {
                 URL url = new URL(input);
 
                 //try to guess format
-                format = RDFFormat.forFileName(url.getFile());
+                //format = RDFFormat.forFileName(url.getFile());
+                format = Rio.getParserFormatForMIMEType(url.getFile()).orElse(null);
 
                 tempFile = Files.createTempFile("vocab-builder", "." + (format != null ? format.getDefaultFileExtension() : "cache"));
 
@@ -172,8 +176,6 @@ public class Main {
             System.err.println("Could not read input-file: " + e.getMessage());
         } catch (IOException e) {
             System.err.println("Error during file-access: " + e.getMessage());
-        } catch (GraphUtilException e) {
-            e.printStackTrace();
         } catch (GenerationException e) {
             System.err.println(e.getMessage());
         } finally {
@@ -206,7 +208,7 @@ public class Main {
         w.close();
     }
 
-    @SuppressWarnings({"AccessStaticViaInstance", "static-access"})
+    @SuppressWarnings({"static-access"})
     private static Options getCliOpts() {
         Options o = new Options();
 
