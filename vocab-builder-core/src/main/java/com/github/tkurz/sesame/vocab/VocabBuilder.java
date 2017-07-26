@@ -11,7 +11,6 @@ import org.eclipse.rdf4j.model.Model;
 import org.eclipse.rdf4j.model.Resource;
 import org.eclipse.rdf4j.model.Value;
 import org.eclipse.rdf4j.model.impl.SimpleValueFactory;
-import org.eclipse.rdf4j.model.util.GraphUtil;
 import org.eclipse.rdf4j.model.vocabulary.DC;
 import org.eclipse.rdf4j.model.vocabulary.DCTERMS;
 import org.eclipse.rdf4j.model.vocabulary.OWL;
@@ -328,7 +327,7 @@ public class VocabBuilder {
             String nextKey = cleanKey(doCaseFormatting(key, getConstantCase()));
 
             for (IRI p : LABEL_PROPERTIES) {
-                for (Value v : GraphUtil.getObjects(model, resource, p)) {
+                for (Value v : model.filter(resource, p, null).objects()) {
                     if (v instanceof Literal) {
                         final Literal lit = (Literal) v;
                         final String lang = lit.getLanguage().orElse(null);
@@ -350,7 +349,7 @@ public class VocabBuilder {
             }
 
             for (IRI p : COMMENT_PROPERTIES) {
-                for (Value v : GraphUtil.getObjects(model, resource, p)) {
+                for (Value v : model.filter(resource, p, null).objects()) {
                     if (v instanceof Literal) {
                         final Literal lit = (Literal) v;
                         final String lang = lit.getLanguage().orElse(null);
@@ -407,7 +406,7 @@ public class VocabBuilder {
 
     private Literal getOptionalObjectLiteral(Model model, Resource subject,
                                              IRI predicate, String lang) {
-        Set<Value> objects = GraphUtil.getObjects(model, subject, predicate);
+        Set<Value> objects = model.filter(subject, predicate, null).objects();
 
         Literal result = null;
 
