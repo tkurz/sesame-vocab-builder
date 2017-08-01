@@ -4,13 +4,12 @@ package com.github.tkurz.sesame.vocab.test;
 import com.github.tkurz.sesame.vocab.GenerationException;
 import com.github.tkurz.sesame.vocab.VocabBuilder;
 import org.apache.commons.io.FileUtils;
+import org.eclipse.rdf4j.rio.RDFParseException;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
-import org.openrdf.model.util.GraphUtilException;
-import org.openrdf.rio.RDFParseException;
 
 import javax.tools.JavaCompiler;
 import javax.tools.ToolProvider;
@@ -41,8 +40,6 @@ public class VocabBuilderCompileTest {
             Assert.fail("Could not generate vocab " + e.getMessage());
         } catch (RDFParseException e) {
             Assert.fail("Could not parse test-file: " + e.getMessage());
-        } catch (GraphUtilException e) {
-            Assert.fail("Could not read vocabulary: " + e.getMessage());
         }
 
     }

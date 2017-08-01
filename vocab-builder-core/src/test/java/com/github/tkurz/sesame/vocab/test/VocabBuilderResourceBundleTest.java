@@ -3,13 +3,13 @@ package com.github.tkurz.sesame.vocab.test;
 import com.github.tkurz.sesame.vocab.GenerationException;
 import com.github.tkurz.sesame.vocab.VocabBuilder;
 import org.apache.commons.io.FileUtils;
+import org.eclipse.rdf4j.rio.RDFParseException;
 import org.hamcrest.CoreMatchers;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
-import org.openrdf.rio.RDFParseException;
 
 import java.io.BufferedReader;
 import java.io.File;
